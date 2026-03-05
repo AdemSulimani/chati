@@ -36,22 +36,44 @@ function nextId() {
   return String(Date.now())
 }
 
+const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL ?? 'http://localhost:5000'
+
 export function ChatWindow({ onClose, storeName }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>(() => createInitialMessages(storeName))
   const [isTyping, setIsTyping] = useState(false)
 
-  const handleSend = useCallback((text: string) => {
+  const handleSend = useCallback(async (text: string) => {
     setMessages((prev) => [
       ...prev,
       { id: nextId(), type: 'user', text, timestamp: Date.now() },
-      // Tani vetëm UI – përgjigje bot-i do shtohet me backend
     ])
-
-    // Simulim i thjeshtë i gjendjes "Asistenti po shkruan..."
     setIsTyping(true)
-    setTimeout(() => {
+
+    try {
+      const res = await fetch(`${CHAT_API_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data?.error ?? `Gabim ${res.status}`)
+      }
+
+      const botText = typeof data?.text === 'string' ? data.text : 'Nuk u gjet përgjigje.'
+      setMessages((prev) => [
+        ...prev,
+        { id: nextId(), type: 'bot', text: botText, timestamp: Date.now() },
+      ])
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { id: nextId(), type: 'bot', text: 'Gabim, provoni përsëri.', timestamp: Date.now() },
+      ])
+    } finally {
       setIsTyping(false)
-    }, 1200)
+    }
   }, [])
 
   return (

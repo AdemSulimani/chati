@@ -1,0 +1,105 @@
+/**
+ * Shërbimi i të dhënave — lexon produkte dhe FAQ nga MongoDB.
+ */
+
+import Product from '../models/Product.js';
+import Faq from '../models/Faq.js';
+
+function normalizeText(text) {
+  return String(text)
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function toPlainProduct(doc) {
+  if (!doc) return null;
+  const o = doc.toObject ? doc.toObject() : doc;
+  return {
+    id: String(o._id),
+    name: o.name,
+    description: o.description ?? '',
+    price: o.price,
+    stock: o.stock ?? 0,
+    category: o.category ?? '',
+    unit: o.unit ?? '',
+  };
+}
+
+function toPlainFaq(doc) {
+  if (!doc) return null;
+  const o = doc.toObject ? doc.toObject() : doc;
+  return {
+    id: String(o._id),
+    type: o.type,
+    keywords: Array.isArray(o.keywords) ? o.keywords : [],
+    answer: o.answer ?? '',
+  };
+}
+
+/**
+ * Të gjitha produktet.
+ */
+export async function getProducts() {
+  const docs = await Product.find().lean();
+  return docs.map((d) => toPlainProduct(d));
+}
+
+/**
+ * Produktet e një kategorie.
+ */
+export async function getProductsByCategory(category) {
+  const normalized = normalizeText(category);
+  const docs = await Product.find({
+    category: { $regex: new RegExp(`^${normalized}$`, 'i') },
+  }).lean();
+  return docs.map((d) => toPlainProduct(d));
+}
+
+/**
+ * Një produkt sipas id.
+ */
+export async function getProductById(id) {
+  const doc = await Product.findById(id).lean();
+  return toPlainProduct(doc);
+}
+
+/**
+ * Produktet që janë në stok (stock > 0).
+ */
+export async function getProductsInStock() {
+  const docs = await Product.find({ stock: { $gt: 0 } }).lean();
+  return docs.map((d) => toPlainProduct(d));
+}
+
+/**
+ * Të gjitha hyrjet FAQ.
+ */
+export async function getFaq() {
+  const docs = await Faq.find().lean();
+  return docs.map((d) => toPlainFaq(d));
+}
+
+/**
+ * Gjen një FAQ që përputhet me mesazhin e përdoruesit (keyword më i gjatë që përputhet).
+ */
+export async function findFaqByMessage(userMessage) {
+  if (!userMessage || String(userMessage).trim() === '') return null;
+  const normalized = normalizeText(userMessage);
+  const faqList = await getFaq();
+  let best = null;
+  let bestLen = 0;
+
+  for (const entry of faqList) {
+    const keywords = entry.keywords || [];
+    for (const kw of keywords) {
+      const k = normalizeText(kw);
+      const matches = normalized.includes(k) || k.includes(normalized);
+      if (matches && k.length > bestLen) {
+        bestLen = k.length;
+        best = entry;
+      }
+    }
+  }
+  return best;
+}

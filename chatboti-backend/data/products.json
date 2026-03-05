@@ -1,0 +1,74 @@
+[
+  {
+    "id": "prod-1",
+    "name": "Whey Protein Vanilla 1kg",
+    "description": "Proteina e qumështit me vanilë, 24g proteinë për shërbesë. Ideale pas stërvitjes. Pa shtesa të panevojshme.",
+    "price": 24.99,
+    "stock": 45,
+    "category": "Proteina",
+    "unit": "kg"
+  },
+  {
+    "id": "prod-2",
+    "name": "Whey Protein Chocolate 2kg",
+    "description": "Proteina e qumështit me çokollatë. Paketim ekonomik 2kg, 24g proteinë për shërbesë.",
+    "price": 44.99,
+    "stock": 0,
+    "category": "Proteina",
+    "unit": "kg"
+  },
+  {
+    "id": "prod-3",
+    "name": "Creatine Monohydrate 300g",
+    "description": "Kreatinë monohidrat e pastër, pa aditivë. Për forcë dhe performancë në stërvitje.",
+    "price": 14.99,
+    "stock": 120,
+    "category": "Kreatinë",
+    "unit": "g"
+  },
+  {
+    "id": "prod-4",
+    "name": "BCAA 2:1:1 400g",
+    "description": "Aminoacide degëzore për rikuperim muskujsh dhe reduktim lodhjeje. Aromë frutash.",
+    "price": 29.99,
+    "stock": 30,
+    "category": "Aminoacide",
+    "unit": "g"
+  },
+  {
+    "id": "prod-5",
+    "name": "Vitamin D3 + K2 60 kapsula",
+    "description": "Kombinim Vitamin D3 dhe K2 për eshtra dhe imunitet. Doza ditore e rekomanduar.",
+    "price": 12.99,
+    "stock": 80,
+    "category": "Vitamina",
+    "unit": "kapsula"
+  },
+  {
+    "id": "prod-6",
+    "name": "Pre-Workout Energy 300g",
+    "description": "Përzierje kafeinë, beta-alaninë dhe vitaminë B për energji dhe fokus gjatë stërvitjes.",
+    "price": 22.99,
+    "stock": 25,
+    "category": "Pre-Workout",
+    "unit": "g"
+  },
+  {
+    "id": "prod-7",
+    "name": "Protein Bar 60g (6 copë)",
+    "description": "Bar me 20g proteinë, çokollatë. I përshtatshëm si snack pas stërvitjes ose në udhëtim.",
+    "price": 9.99,
+    "stock": 60,
+    "category": "Snack",
+    "unit": "paketë"
+  },
+  {
+    "id": "prod-8",
+    "name": "Omega-3 1000mg 90 kapsula",
+    "description": "Vaj peshku të pastër, për zemër dhe tru. 90 kapsula për rreth 3 muaj përdorim.",
+    "price": 18.99,
+    "stock": 40,
+    "category": "Vitamina",
+    "unit": "kapsula"
+  }
+]
