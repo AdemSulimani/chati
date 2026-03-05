@@ -1,0 +1,116 @@
+[
+  {
+    "id": "faq-1",
+    "type": "produkte",
+    "keywords": [
+      "produkte",
+      "produktet",
+      "çfarë produktesh",
+      "çfarë keni",
+      "katalog",
+      "katalogu",
+      "lista e produkteve",
+      "listë produktesh",
+      "tregoni më shumë për produktet",
+      "mund të më tregoni më shumë për produktet",
+      "çmime",
+      "çmimet",
+      "sa kushtojnë",
+      "çfarë shitni",
+      "blerje",
+      "produkt",
+      "kategori",
+      "kategoritë",
+      "oferta produktesh",
+      "të gjitha produktet"
+    ],
+    "answer": "Kemi një gamë të gjerë produktesh: proteina (Whey), kreatinë, BCAA, pre-workout, vitamina, omega-3 dhe snack proteinë. Më poshtë gjeni disa nga produktet tona me çmime dhe disponibilitet."
+  },
+  {
+    "id": "faq-2",
+    "type": "stok",
+    "keywords": [
+      "stok",
+      "në stok",
+      "a është në stok",
+      "a keni",
+      "disponibilitet",
+      "disponibel",
+      "a është ky produkt në stok",
+      "e keni në stok",
+      "ka më",
+      "mungon",
+      "kur vjen",
+      "sjellni",
+      "kur do ketë",
+      "e keni disponibel",
+      "porosit",
+      "mund ta porosis"
+    ],
+    "answer": "Stoku ndryshon vazhdimisht. Për informacion të saktë për një produkt specifik, më tregoni emrin ose kategorinë dhe kontrolloj për ju. Mund t'ju tregoj edhe cilat produkte janë aktualisht në stok."
+  },
+  {
+    "id": "faq-3",
+    "type": "shipping",
+    "keywords": [
+      "shipping",
+      "dërgesë",
+      "dërgesa",
+      "sa kushton dërgesa",
+      "sa zgjat",
+      "kohë dërgese",
+      "transport",
+      "postë",
+      "sa kushton dhe sa zgjat shipping-u",
+      "çmim dërgese",
+      "dorëzim",
+      "dërgohet",
+      "sa lek",
+      "falas dërgesë",
+      "më dorëzohet",
+      "kur mbërrin",
+      "porosi"
+    ],
+    "answer": "Dërgesa në të gjithë Shqipërinë kushton 300 lekë. Porositë e bëra para orës 14:00 përputhen zakonisht të njëjtën ditë; përndryshe ditën për të ardhshme. Koha e dorëzimit është 1–3 ditë pune në varësi të zonës."
+  },
+  {
+    "id": "faq-4",
+    "type": "kthime",
+    "keywords": [
+      "kthim",
+      "kthime",
+      "kthyer",
+      "politika e kthimeve",
+      "cila është politika e kthimeve",
+      "mund ta kthej",
+      "garanci",
+      "reklamacion",
+      "rimbursim",
+      "14 ditë",
+      "kthej produktin",
+      "nuk më pëlqen",
+      "gabim porosi"
+    ],
+    "answer": "Ju mund të ktheni produktet e papërdorura (të mbyllura) brenda 14 ditëve nga blerja. Produkti duhet të jetë në gjendje origjinale. Kontaktoni shërbimin e klientit për hapat e kthimit dhe rimbursimin."
+  },
+  {
+    "id": "faq-5",
+    "type": "oferta",
+    "keywords": [
+      "oferta",
+      "ofertat",
+      "zbritje",
+      "a keni oferta",
+      "a keni oferta aktuale",
+      "promocion",
+      "çmim special",
+      "ulje çmimi",
+      "kod zbritje",
+      "zbritje përqindje",
+      "oferta të weekit",
+      "çfarë ofertash",
+      "promo"
+    ],
+    "answer": "Ofertat ndryshojnë çdo javë. Aktualisht kemi oferta për Whey Protein dhe BCAA. Për detaje të fundit dhe kode zbritjeje, vizitoni faqen kryesore ose na pyesni për produktin që ju intereson."
+  }
+]

@@ -1,0 +1,90 @@
+[
+  {
+    "id": "prod-1",
+    "name": "Whey Protein Vanilla 1kg",
+    "description": "Proteina e qumështit me vanilë, 24g proteinë për shërbesë. Ideale pas stërvitjes. Pa shtesa të panevojshme.",
+    "price": 24.99,
+    "stock": 45,
+    "category": "Proteina",
+    "unit": "kg",
+    "characteristics": "24g proteinë për shërbesë, aromë vanilë, pa gluten, për rikuperim muskujsh. Përmbajtje: 1 kg, rreth 30 shërbesa.",
+    "details": "Proteina e qumështit (WPC). Përdorim: 1 shërbesë (30–33g) me ujë ose qumësht pas stërvitjes. Ruajtje në vend të ftohtë dhe të thatë."
+  },
+  {
+    "id": "prod-2",
+    "name": "Whey Protein Chocolate 2kg",
+    "description": "Proteina e qumështit me çokollatë. Paketim ekonomik 2kg, 24g proteinë për shërbesë.",
+    "price": 44.99,
+    "stock": 0,
+    "category": "Proteina",
+    "unit": "kg",
+    "characteristics": "24g proteinë për shërbesë, aromë çokollatë, paketim 2 kg ekonomik. I përshtatshëm për përdorim të përditshëm.",
+    "details": "Whey protein me çokollatë. Doza: 30–33g për shërbesë. Aktualisht jashtë stokut; mund të porositet dhe dërgohet kur të ketë."
+  },
+  {
+    "id": "prod-3",
+    "name": "Creatine Monohydrate 300g",
+    "description": "Kreatinë monohidrat e pastër, pa aditivë. Për forcë dhe performancë në stërvitje.",
+    "price": 14.99,
+    "stock": 120,
+    "category": "Kreatinë",
+    "unit": "g",
+    "characteristics": "Kreatinë monohidrat 100% e pastër, pa aditivë. 300g, rreth 60 doza (5g/ditë). Për forcë dhe performancë muskujsh.",
+    "details": "Doza e rekomanduar: 5g në ditë, mund të përzier me ujë ose me smoothie. Konsultohu me mjek nëse ke probleme me veshkat."
+  },
+  {
+    "id": "prod-4",
+    "name": "BCAA 2:1:1 400g",
+    "description": "Aminoacide degëzore për rikuperim muskujsh dhe reduktim lodhjeje. Aromë frutash.",
+    "price": 29.99,
+    "stock": 30,
+    "category": "Aminoacide",
+    "unit": "g",
+    "characteristics": "Raport 2:1:1 (Leucinë:Izoleucinë:Valinë), 400g, aromë frutash. Pa sheqer, për rikuperim dhe anti-katabolizëm.",
+    "details": "Përdorim para, gjatë ose pas stërvitjes. Mund të përzier me 300–400 ml ujë. Ruajtje në vend të ftohtë pas hapjes."
+  },
+  {
+    "id": "prod-5",
+    "name": "Vitamin D3 + K2 60 kapsula",
+    "description": "Kombinim Vitamin D3 dhe K2 për eshtra dhe imunitet. Doza ditore e rekomanduar.",
+    "price": 12.99,
+    "stock": 80,
+    "category": "Vitamina",
+    "unit": "kapsula",
+    "characteristics": "Vitamin D3 dhe K2 (MK-7) në një kapsulë. 60 kapsula, doza ditore. Për eshtra, imunitet dhe absorbim kalciumi.",
+    "details": "1 kapsulë në ditë me një vakt. I përshtatshëm për vegjetarianë (kapsulë vegjetale). Mos e kaloni dozën e rekomanduar."
+  },
+  {
+    "id": "prod-6",
+    "name": "Pre-Workout Energy 300g",
+    "description": "Përzierje kafeinë, beta-alaninë dhe vitaminë B për energji dhe fokus gjatë stërvitjes.",
+    "price": 22.99,
+    "stock": 25,
+    "category": "Pre-Workout",
+    "unit": "g",
+    "characteristics": "Kafeinë, beta-alaninë, vitaminë B, 300g. Aromë frutash. Për energji, fokus dhe qëndrueshmëri gjatë stërvitjes.",
+    "details": "Merr 15–30 min para stërvitjes. Mos përdor pas orës 16:00 nëse ndikon në gjumë. Kontraindikuar për të sëmurët me zemër ose presion të lartë."
+  },
+  {
+    "id": "prod-7",
+    "name": "Protein Bar 60g (6 copë)",
+    "description": "Bar me 20g proteinë, çokollatë. I përshtatshëm si snack pas stërvitjes ose në udhëtim.",
+    "price": 9.99,
+    "stock": 60,
+    "category": "Snack",
+    "unit": "paketë",
+    "characteristics": "20g proteinë për bar, 60g për bar, 6 bare në paketë. Aromë çokollatë. Snack i përshtatshëm për në dorë.",
+    "details": "Një bar pas stërvitjes ose si snack. Ruajtje në vend të ftohtë dhe të thatë. Data e skadencës e shënuar në paketë."
+  },
+  {
+    "id": "prod-8",
+    "name": "Omega-3 1000mg 90 kapsula",
+    "description": "Vaj peshku të pastër, për zemër dhe tru. 90 kapsula për rreth 3 muaj përdorim.",
+    "price": 18.99,
+    "stock": 40,
+    "category": "Vitamina",
+    "unit": "kapsula",
+    "characteristics": "Omega-3 1000mg për kapsulë (EPA + DHA), 90 kapsula. Vaj peshku të pastër. Për zemër, tru dhe inflamacion.",
+    "details": "1–2 kapsula në ditë me një vakt. Përdorim rreth 3 muaj. Ruajtje larg dritës dhe në temperaturë dhomë."
+  }
+]
