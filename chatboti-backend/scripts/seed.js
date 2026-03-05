@@ -40,6 +40,8 @@ async function seed() {
     stock: p.stock ?? 0,
     category: p.category ?? '',
     unit: p.unit ?? '',
+    characteristics: p.characteristics ?? '',
+    details: p.details ?? '',
   }));
   await Product.insertMany(productDocs);
   console.log('Produkte të shtuara:', productDocs.length);

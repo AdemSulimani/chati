@@ -8,6 +8,9 @@ const productSchema = new mongoose.Schema(
     stock: { type: Number, default: 0 },
     category: { type: String, default: '' },
     unit: { type: String, default: '' },
+    // Fushat opsionale për detaje të plota te AI (kontekst)
+    characteristics: { type: String, default: '' },
+    details: { type: String, default: '' },
   },
   { timestamps: true }
 );

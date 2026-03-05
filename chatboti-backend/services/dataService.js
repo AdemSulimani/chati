@@ -12,10 +12,11 @@ function normalizeText(text) {
     .trim();
 }
 
+/** Kthen të gjitha fushat e produktit si objekt i thjeshtë (për kontekst te AI). */
 function toPlainProduct(doc) {
   if (!doc) return null;
   const o = doc.toObject ? doc.toObject() : doc;
-  return {
+  const base = {
     id: String(o._id),
     name: o.name,
     description: o.description ?? '',
@@ -23,7 +24,16 @@ function toPlainProduct(doc) {
     stock: o.stock ?? 0,
     category: o.category ?? '',
     unit: o.unit ?? '',
+    characteristics: o.characteristics ?? '',
+    details: o.details ?? '',
   };
+  // Çdo fushë tjetër nga DB (për të ardhmen) përfshihet në kontekst
+  const known = new Set(['_id', 'id', 'name', 'description', 'price', 'stock', 'category', 'unit', 'characteristics', 'details', 'createdAt', 'updatedAt', '__v']);
+  for (const key of Object.keys(o)) {
+    if (known.has(key)) continue;
+    base[key] = o[key];
+  }
+  return base;
 }
 
 function toPlainFaq(doc) {
