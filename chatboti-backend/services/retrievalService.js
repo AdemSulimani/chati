@@ -6,7 +6,12 @@
  * mbi një listë të vogël kandidatësh nga DB (jo krejt koleksioni).
  */
 
-import { getProductById, getFaqById } from './dataService.js';
+import {
+  getProductById,
+  getFaqById,
+  searchProductsByText,
+  searchFaqByTextOrKeywords,
+} from './dataService.js';
 import { searchDocumentsByText } from './searchIndexService.js';
 
 // Prag minimal besueshmërie për një përputhje (score).
@@ -151,30 +156,45 @@ export async function retrieveRelevantContext(userMessage) {
   const normalizedMessage = normalizeText(userMessage || '');
   const queryTokens = tokenize(normalizedMessage);
 
-  // Kërkim i vetëm mbi koleksionin SearchDocument (produkte + FAQ në një index të vetëm)
+  let products = [];
+  let faqList = [];
+
+  // Kërkim i parë mbi koleksionin SearchDocument (produkte + FAQ në një index të vetëm)
   const searchDocs = await searchDocumentsByText(userMessage, 50);
 
-  const productIds = [];
-  const faqIds = [];
-  for (const doc of searchDocs || []) {
-    if (!doc || !doc.type || !doc.refId) continue;
-    if (doc.type === 'product') {
-      productIds.push(String(doc.refId));
-    } else if (doc.type === 'faq') {
-      faqIds.push(String(doc.refId));
+  if (searchDocs && searchDocs.length > 0) {
+    const productIds = [];
+    const faqIds = [];
+    for (const doc of searchDocs || []) {
+      if (!doc || !doc.type || !doc.refId) continue;
+      if (doc.type === 'product') {
+        productIds.push(String(doc.refId));
+      } else if (doc.type === 'faq') {
+        faqIds.push(String(doc.refId));
+      }
     }
+
+    const uniqueProductIds = [...new Set(productIds)];
+    const uniqueFaqIds = [...new Set(faqIds)];
+
+    const [productsRaw, faqListRaw] = await Promise.all([
+      Promise.all(uniqueProductIds.map((id) => getProductById(id))),
+      Promise.all(uniqueFaqIds.map((id) => getFaqById(id))),
+    ]);
+
+    products = productsRaw.filter(Boolean);
+    faqList = faqListRaw.filter(Boolean);
   }
 
-  const uniqueProductIds = [...new Set(productIds)];
-  const uniqueFaqIds = [...new Set(faqIds)];
-
-  const [productsRaw, faqListRaw] = await Promise.all([
-    Promise.all(uniqueProductIds.map((id) => getProductById(id))),
-    Promise.all(uniqueFaqIds.map((id) => getFaqById(id))),
-  ]);
-
-  const products = productsRaw.filter(Boolean);
-  const faqList = faqListRaw.filter(Boolean);
+  // Nëse index-i i kërkimit nuk kthen asgjë, përdor fallback direkt mbi koleksionet Product / Faq
+  if ((!products || products.length === 0) && (!faqList || faqList.length === 0)) {
+    const [productsFallback, faqFallback] = await Promise.all([
+      searchProductsByText(userMessage, 30),
+      searchFaqByTextOrKeywords(userMessage, 30),
+    ]);
+    products = productsFallback || [];
+    faqList = faqFallback || [];
+  }
 
   // Scoring për produktet
   const productMatches = [];

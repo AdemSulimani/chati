@@ -43,7 +43,9 @@ const conversationSchema = new mongoose.Schema(
 
 conversationSchema.pre('save', function (next) {
   this.lastActivityAt = new Date();
-  next();
+  if (typeof next === 'function') {
+    next();
+  }
 });
 
 export default mongoose.model('Conversation', conversationSchema);
