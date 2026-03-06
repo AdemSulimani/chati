@@ -7,9 +7,13 @@ const AI_API_KEY = process.env.AI_API_KEY || process.env.OPENAI_API_KEY;
 const AI_API_URL = (process.env.AI_API_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
 const AI_MODEL = process.env.AI_MODEL || 'gpt-3.5-turbo';
 
-/** System prompt pa kontekst (kur nuk ka të dhëna nga DB). */
+/** System prompt pa kontekst (kur nuk ka të dhëna nga DB).
+ *  RIGOROZ: mos shpik fakte; nëse mungon informacioni, thuaj që nuk e ke.
+ */
 const DEFAULT_SYSTEM_PROMPT =
-  'Ti je asistenti virtual i një dyqani online (ProteinPlus). Përgjigju shkurt dhe miqësor në shqip. Nëse pyetja nuk ka të bëjë me produktet, dërgesën, kthimet apo dyqanin, thuaj politikesh që nuk ke informacion dhe ofro ndihmë për çfarë mund të përgjigjesh.';
+  'Ti je asistenti virtual i një dyqani online (ProteinPlus). Përgjigju shkurt dhe miqësor në shqip.' +
+  ' Mos shpik asnjë informacion faktik (si çmime, stok, përbërje, politika të sakta dërgese/kthimi) nëse nuk të jepet qartë në mesazhet e sistemit ose të asistentit.' +
+  ' Nëse nuk ke informacion të mjaftueshëm nga sistemi për një pyetje konkrete, thuaj qartë që nuk e ke këtë informacion në sistem dhe sugjero që përdoruesi të kontaktojë suportin ose të pyesë ndryshe.';
 
 /**
  * Formaton një produkt me të gjitha fushat për kontekst te AI (emër, përshkrim, çmim, stok, kategori, njësi, karakteristika, detaje, etj.).
@@ -47,8 +51,8 @@ function formatProductForContext(p) {
  * - burimin e vetëm për fakte rreth ÇMIMIT/STOKUT/PËRSHKRIMIT/DETAJEVE
  *   për produktet që shfaqen këtu.
  *
- * Për pyetje të tjera relevante për produktet/dyqanin, AI mund të përdorë
- * njohuritë e veta, por pa shpikur të dhëna që nuk janë në këtë kontekst.
+ * Për pyetje të tjera relevante për produktet/dyqanin, AI mund të japë
+ * vetëm komente të përgjithshme, POR pa shpikur të dhëna të reja që nuk janë në këtë kontekst.
  * Mesazhet krejt jashtë temës janë filtruar më herët në Hapin 3.
  */
 function buildSystemPromptWithContext(products, faqList) {
@@ -59,13 +63,13 @@ function buildSystemPromptWithContext(products, faqList) {
     '',
     'RREGULLA PËR PËRDORIMIN E TË DHËNAVE:',
     '',
-    '1. Për ÇMIM, STOK, PËRSHKRIM, DETAJE dhe KARAKTERISTIKA të produkteve: përdor VETËM të dhënat nga lista e produkteve më poshtë. Mos shpik asnjë numër, çmim, stok apo fakt.',
+    '1. Për ÇMIM, STOK, PËRSHKRIM, DETAJE dhe KARAKTERISTIKA të produkteve: përdor VETËM të dhënat nga lista e produkteve më poshtë. Mos shpik asnjë numër, çmim, stok apo fakt për asnjë produkt.',
     '',
     '2. Nëse pyetja është për një produkt që NUK shfaqet në këtë listë të shkurtër, thuaj që nuk e ke në këtë rezultat/kontekst dhe ofro produkte alternative nga lista, ose sqarim të përgjithshëm.',
     '',
-    '3. Pyetje pa informacion të drejtpërdrejtë në lista: mund të japësh këshilla të përgjithshme (p.sh. rreth suplementeve, stërvitjes, ushqimit), por mos shpik çmime, stok ose karakteristika konkrete që nuk janë në të dhëna.',
+    '3. Pyetje pa informacion të drejtpërdrejtë në lista: mund të japësh vetëm këshilla shumë të përgjithshme (p.sh. rreth suplementeve në mënyrë abstrakte), por mos shpik ÇMIME, STOK, PËRBËRJE ose karakteristika konkrete që nuk janë shkruar qartë në këto të dhëna.',
     '',
-    '4. Nëse nuk je i sigurt ose përgjigjja nuk është relevante për produktet/dyqanin: thuaj që nuk ke informacion të mjaftueshëm dhe sugjero pyetje të tjera që lidhen me produktet, çmimet, dërgesën ose kthimet.',
+    '4. Nëse nuk je i sigurt ose informacioni nuk gjendet në tekstin e kontekstit: thuaj qartë që nuk e ke këtë informacion në databazën aktuale dhe sugjero pyetje të tjera që lidhen me produktet, çmimet, dërgesën ose kthimet.',
     '',
     '--- PRODUKTET (rezultate të përzgjedhura nga databaza: emër, përshkrim, çmim, stok, kategori, njësi, karakteristika, detaje) ---',
   ];
@@ -134,7 +138,8 @@ export async function getAiReply(
     model: AI_MODEL,
     messages,
     max_tokens: 500,
-    temperature: 0.7,
+    // Temperaturë shumë e ulët që të minimizohet "shpikja" e informatave.
+    temperature: 0,
   };
 
   const res = await fetch(url, {
