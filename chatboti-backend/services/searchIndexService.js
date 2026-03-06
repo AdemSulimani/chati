@@ -4,6 +4,22 @@ function escapeRegex(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function normalizeText(text) {
+  return String(text)
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function tokenize(text) {
+  const normalized = normalizeText(text);
+  if (!normalized) return [];
+  return normalized
+    .split(' ')
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 2);
+}
+
 function buildProductSearchText(product) {
   if (!product) return '';
   const name = product.name || '';
@@ -85,11 +101,16 @@ export async function removeFaqFromIndex(faqId) {
 export async function searchDocumentsByText(query, limit = 50) {
   if (!query || String(query).trim() === '') return [];
 
-  const trimmed = String(query).trim();
-  const regex = new RegExp(escapeRegex(trimmed), 'i');
+  const tokens = tokenize(query);
+  if (!tokens.length) return [];
+
+  const orConditions = tokens.map((token) => {
+    const regex = new RegExp(escapeRegex(token), 'i');
+    return { text: regex };
+  });
 
   const docs = await SearchDocument.find({
-    text: regex,
+    $or: orConditions,
   })
     .limit(limit)
     .lean();

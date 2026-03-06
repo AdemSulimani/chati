@@ -16,6 +16,15 @@ function escapeRegex(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function tokenize(text) {
+  const normalized = normalizeText(text);
+  if (!normalized) return [];
+  return normalized
+    .split(' ')
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 2);
+}
+
 /** Kthen të gjitha fushat e produktit si objekt i thjeshtë (për kontekst te AI). */
 function toPlainProduct(doc) {
   if (!doc) return null;
@@ -138,18 +147,24 @@ export async function findFaqByMessage(userMessage) {
 export async function searchProductsByText(query, limit = 30) {
   if (!query || String(query).trim() === '') return [];
 
-  const trimmed = String(query).trim();
-  const regex = new RegExp(escapeRegex(trimmed), 'i');
+  const tokens = tokenize(query);
+  if (!tokens.length) return [];
 
-  const docs = await Product.find({
-    $or: [
+  const orConditions = [];
+  for (const token of tokens) {
+    const regex = new RegExp(escapeRegex(token), 'i');
+    orConditions.push(
       { name: regex },
       { description: regex },
       { category: regex },
       { unit: regex },
       { characteristics: regex },
-      { details: regex },
-    ],
+      { details: regex }
+    );
+  }
+
+  const docs = await Product.find({
+    $or: orConditions,
   })
     .limit(limit)
     .lean();
@@ -167,15 +182,21 @@ export async function searchProductsByText(query, limit = 30) {
 export async function searchFaqByTextOrKeywords(query, limit = 30) {
   if (!query || String(query).trim() === '') return [];
 
-  const trimmed = String(query).trim();
-  const regex = new RegExp(escapeRegex(trimmed), 'i');
+  const tokens = tokenize(query);
+  if (!tokens.length) return [];
 
-  const docs = await Faq.find({
-    $or: [
+  const orConditions = [];
+  for (const token of tokens) {
+    const regex = new RegExp(escapeRegex(token), 'i');
+    orConditions.push(
       { type: regex },
       { answer: regex },
-      { keywords: { $elemMatch: { $regex: regex } } },
-    ],
+      { keywords: { $elemMatch: { $regex: regex } } }
+    );
+  }
+
+  const docs = await Faq.find({
+    $or: orConditions,
   })
     .limit(limit)
     .lean();
