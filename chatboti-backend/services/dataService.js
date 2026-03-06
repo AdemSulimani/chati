@@ -95,6 +95,14 @@ export async function getFaq() {
 }
 
 /**
+ * Një FAQ sipas id.
+ */
+export async function getFaqById(id) {
+  const doc = await Faq.findById(id).lean();
+  return toPlainFaq(doc);
+}
+
+/**
  * Gjen një FAQ që përputhet me mesazhin e përdoruesit (keyword më i gjatë që përputhet).
  */
 export async function findFaqByMessage(userMessage) {

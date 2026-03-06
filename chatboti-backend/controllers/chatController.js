@@ -16,10 +16,49 @@ import {
 } from '../services/dataService.js';
 import { retrieveRelevantContext } from '../services/retrievalService.js';
 import { getAiReply, isAiConfigured } from '../services/aiService.js';
+import Conversation from '../models/Conversation.js';
 
 /** Mesazhi i vetëm që kthehet kur përdoruesi dërgon diçka pa kuptim ose jashtë temës. */
 const OFF_TOPIC_MESSAGE =
   'Nuk mund të ndihmoj me këtë temë. Ju lutemi bëni pyetje lidhur me produktet, çmimet, dërgesën, kthimet ose informacionin e dyqanit.';
+
+/** Mesazh fallback kur retrieval nuk gjen asnjë informacion relevant në DB dhe nuk thirret AI. */
+const FALLBACK_MESSAGE =
+  'Nuk gjeta informacion për këtë pyetje në të dhënat tona. Një agjent do të përgjigjet së shpejti.';
+
+/**
+ * Përgatit historinë e bisedës për t'ia dërguar AI‑t:
+ * merr mesazhet e fundit (user + assistant) në rend kronologjik,
+ * me kufi në numrin e mesazheve dhe numrin total të karaktereve.
+ */
+function buildHistoryForAi(conversation, maxMessages = 5, maxChars = 2000) {
+  if (!conversation || !Array.isArray(conversation.messages)) return [];
+
+  const msgs = conversation.messages;
+  const result = [];
+  let totalChars = 0;
+
+  // Ec nga fundi për të marrë mesazhet më të fundit, por ktheje në rend kronologjik
+  for (let i = msgs.length - 1; i >= 0 && result.length < maxMessages; i--) {
+    const m = msgs[i];
+    if (!m || !m.role || !m.content) continue;
+    const contentStr = String(m.content);
+    const nextTotal = totalChars + contentStr.length;
+
+    if (nextTotal > maxChars && result.length > 0) {
+      break;
+    }
+
+    totalChars = nextTotal;
+    // unshift për të ruajtur rendin më i vjetër → më i ri
+    result.unshift({
+      role: m.role,
+      content: contentStr,
+    });
+  }
+
+  return result;
+}
 
 /**
  * Kontrollon nëse mesazhi është pa kuptim ose dukshëm jashtë temës (vetëm emoji, numra, shumë e shkurtër, pa shkronja).
@@ -156,7 +195,7 @@ async function buildRagContext(userMessage) {
 
 export async function postMessage(req, res, next) {
   try {
-    const { text } = req.body ?? {};
+    const { text, conversationId } = req.body ?? {};
 
     // ——— Hapi 1: Validacion ———
     if (text == null || String(text).trim() === '') {
@@ -170,6 +209,20 @@ export async function postMessage(req, res, next) {
     // Logim bazë për çdo mesazh të ardhur në chat
     console.log('[Chat] New message', { userMessage, intent });
     let botReply;
+    let conversation = null;
+
+    // Krijo ose gjej conversation sipas conversationId (nëse dërgohet nga frontend)
+    if (conversationId) {
+      try {
+        conversation = await Conversation.findById(conversationId);
+      } catch (_) {
+        conversation = null;
+      }
+    }
+    if (!conversation) {
+      conversation = new Conversation();
+      await conversation.save();
+    }
 
     // ——— Hapi 2: Intent / Përputhje me FAQ (keyword, "përputhje e fortë") ———
     const faq = await findFaqByMessage(userMessage);
@@ -213,19 +266,25 @@ export async function postMessage(req, res, next) {
           const context = await buildRagContext(userMessage);
 
           if (!context) {
-            // Nëse nuk gjendet asgjë relevante në DB, lejojmë AI të përgjigjet
-            // vetëm me system prompt të përgjithshëm (pa kontekst nga DB).
-            console.log('[Chat] Using AI without DB context (no retrieval hits)', {
+            // Nëse retrieval nuk gjen asgjë relevante në DB, MOS thirr AI.
+            // Kthejmë një mesazh statik fallback për t'u ngritur te një agjent njerëzor.
+            console.log('[Chat] Using fallback message instead of AI (no retrieval hits)', {
               userMessage,
+              conversationId: conversation?._id?.toString(),
             });
-            botReply = await getAiReply(userMessage);
+            botReply = FALLBACK_MESSAGE;
           } else {
+            const historyForAi = buildHistoryForAi(conversation);
+
             console.log('[Chat] Using AI with RAG context', {
               userMessage,
               contextProductCount: context.products?.length || 0,
               contextFaqCount: context.faq?.length || 0,
+              historyLength: historyForAi.length,
+              conversationId: conversation?._id?.toString(),
             });
-            botReply = await getAiReply(userMessage, undefined, context);
+
+            botReply = await getAiReply(userMessage, undefined, context, historyForAi);
           }
         } catch (aiErr) {
           console.error('AI API gabim:', aiErr.message);
@@ -238,8 +297,26 @@ export async function postMessage(req, res, next) {
       }
     }
 
+    // ——— Ruaj historinë e bisedës (user + bot) ———
+    if (conversation) {
+      try {
+        conversation.messages.push(
+          { role: 'user', content: userMessage },
+          { role: 'assistant', content: botReply }
+        );
+        await conversation.save();
+      } catch (saveErr) {
+        console.error('[Chat] Failed to save conversation history', {
+          error: saveErr?.message,
+        });
+      }
+    }
+
     // ——— Hapi 5: Kthej përgjigjen te klienti ———
-    res.status(200).json({ text: botReply });
+    res.status(200).json({
+      text: botReply,
+      conversationId: conversation?._id?.toString() ?? null,
+    });
   } catch (err) {
     next(err);
   }

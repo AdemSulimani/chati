@@ -90,14 +90,22 @@ function buildSystemPromptWithContext(products, faqList) {
 }
 
 /**
- * Merr përgjigje nga AI. Nëse jepet context (produkte + FAQ), AI përdor vetëm ato të dhëna për produktet.
+ * Merr përgjigje nga AI.
+ * - Nëse jepet context (produkte + FAQ), AI përdor vetëm ato të dhëna për produktet.
+ * - Nëse jepet history, ai dërgohet si mesazhe user/assistant para mesazhit aktual.
  *
- * @param {string} userMessage - teksti i përdoruesit
+ * @param {string} userMessage - teksti i përdoruesit (mesazhi aktual)
  * @param {string} [systemPrompt] - përdoret vetëm nëse nuk jepet context
  * @param {{ products?: Array, faq?: Array<{type, answer}> }} [context] - të dhëna të SHKURTRA nga DB (subset RAG) për kontekst
+ * @param {Array<{ role: 'user' | 'assistant', content: string }>} [history] - 3–5 mesazhet e fundit të bisedës
  * @returns {Promise<string>}
  */
-export async function getAiReply(userMessage, systemPrompt = DEFAULT_SYSTEM_PROMPT, context = null) {
+export async function getAiReply(
+  userMessage,
+  systemPrompt = DEFAULT_SYSTEM_PROMPT,
+  context = null,
+  history = []
+) {
   if (!AI_API_KEY || AI_API_KEY.trim() === '') {
     throw new Error('AI_API_KEY (ose OPENAI_API_KEY) nuk është vendosur në .env');
   }
@@ -108,12 +116,23 @@ export async function getAiReply(userMessage, systemPrompt = DEFAULT_SYSTEM_PROM
     : systemPrompt;
 
   const url = `${AI_API_URL}/chat/completions`;
+
+  const messages = [{ role: 'system', content: systemContent }];
+
+  const safeHistory = Array.isArray(history) ? history : [];
+  for (const m of safeHistory) {
+    if (!m || !m.role || !m.content) continue;
+    messages.push({
+      role: m.role,
+      content: String(m.content),
+    });
+  }
+
+  messages.push({ role: 'user', content: userMessage });
+
   const body = {
     model: AI_MODEL,
-    messages: [
-      { role: 'system', content: systemContent },
-      { role: 'user', content: userMessage },
-    ],
+    messages,
     max_tokens: 500,
     temperature: 0.7,
   };

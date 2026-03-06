@@ -6,10 +6,12 @@
  * mbi një listë të vogël kandidatësh nga DB (jo krejt koleksioni).
  */
 
-import {
-  searchProductsByText,
-  searchFaqByTextOrKeywords,
-} from './dataService.js';
+import { getProductById, getFaqById } from './dataService.js';
+import { searchDocumentsByText } from './searchIndexService.js';
+
+// Prag minimal besueshmërie për një përputhje (score).
+// Mund ta rregullosh më vonë në bazë të log-ëve.
+const MIN_SCORE = 2;
 
 function normalizeText(text) {
   return String(text)
@@ -149,42 +151,100 @@ export async function retrieveRelevantContext(userMessage) {
   const normalizedMessage = normalizeText(userMessage || '');
   const queryTokens = tokenize(normalizedMessage);
 
-  // Përdor kërkimet e reja nga dataService për të marrë një listë të vogël kandidatësh
-  const [products, faqList] = await Promise.all([
-    searchProductsByText(userMessage, 50),
-    searchFaqByTextOrKeywords(userMessage, 50),
+  // Kërkim i vetëm mbi koleksionin SearchDocument (produkte + FAQ në një index të vetëm)
+  const searchDocs = await searchDocumentsByText(userMessage, 50);
+
+  const productIds = [];
+  const faqIds = [];
+  for (const doc of searchDocs || []) {
+    if (!doc || !doc.type || !doc.refId) continue;
+    if (doc.type === 'product') {
+      productIds.push(String(doc.refId));
+    } else if (doc.type === 'faq') {
+      faqIds.push(String(doc.refId));
+    }
+  }
+
+  const uniqueProductIds = [...new Set(productIds)];
+  const uniqueFaqIds = [...new Set(faqIds)];
+
+  const [productsRaw, faqListRaw] = await Promise.all([
+    Promise.all(uniqueProductIds.map((id) => getProductById(id))),
+    Promise.all(uniqueFaqIds.map((id) => getFaqById(id))),
   ]);
+
+  const products = productsRaw.filter(Boolean);
+  const faqList = faqListRaw.filter(Boolean);
 
   // Scoring për produktet
   const productMatches = [];
+  let maxProductScore = 0;
   for (const p of products || []) {
     const { score, matchedFields } = scoreProduct(p, queryTokens, normalizedMessage);
     if (score > 0) {
       productMatches.push({ product: p, score, matchedFields });
+      if (score > maxProductScore) {
+        maxProductScore = score;
+      }
     }
   }
 
   // Scoring për FAQ
   const faqMatches = [];
+  let maxFaqScore = 0;
   for (const f of faqList || []) {
     const { score, matchedFields } = scoreFaq(f, queryTokens, normalizedMessage);
     if (score > 0) {
       faqMatches.push({ faq: f, score, matchedFields });
+      if (score > maxFaqScore) {
+        maxFaqScore = score;
+      }
     }
   }
 
-  // Radhit sipas score dhe kufizo në max 3
-  productMatches.sort((a, b) => b.score - a.score);
-  faqMatches.sort((a, b) => b.score - a.score);
+  // Filtro sipas pragut të besueshmërisë (MIN_SCORE)
+  const filteredProductMatches = productMatches.filter((m) => m.score >= MIN_SCORE);
+  const filteredFaqMatches = faqMatches.filter((m) => m.score >= MIN_SCORE);
 
-  const topProducts = productMatches.slice(0, 3);
-  const topFaq = faqMatches.slice(0, 3);
+  const anyAboveThreshold =
+    filteredProductMatches.length > 0 || filteredFaqMatches.length > 0;
+
+  // Nëse asnjë dokument nuk kalon pragun → konsiderohet që retrieval nuk gjeti asgjë të mirë
+  if (!anyAboveThreshold) {
+    console.log('[RAG][retrievalService] no good match found above threshold', {
+      userMessage: normalizedMessage,
+      maxProductScore,
+      maxFaqScore,
+      maxScore: Math.max(maxProductScore, maxFaqScore, 0),
+      minScoreThreshold: MIN_SCORE,
+      productCandidates: products?.length || 0,
+      faqCandidates: faqList?.length || 0,
+    });
+
+    return {
+      products: [],
+      faq: [],
+    };
+  }
+
+  // Radhit sipas score dhe kufizo në max 3 (vetëm ato që kaluan pragun)
+  filteredProductMatches.sort((a, b) => b.score - a.score);
+  filteredFaqMatches.sort((a, b) => b.score - a.score);
+
+  const topProducts = filteredProductMatches.slice(0, 3);
+  const topFaq = filteredFaqMatches.slice(0, 3);
 
   // Logim i retrieval-it për observabilitet
   console.log('[RAG][retrievalService] retrieveRelevantContext result', {
     userMessage: normalizedMessage,
     productCandidates: products?.length || 0,
     faqCandidates: faqList?.length || 0,
+    maxProductScore,
+    maxFaqScore,
+    maxScore: Math.max(maxProductScore, maxFaqScore, 0),
+    minScoreThreshold: MIN_SCORE,
+    productPassedThreshold: filteredProductMatches.length,
+    faqPassedThreshold: filteredFaqMatches.length,
     topProducts: topProducts.map(({ product, score, matchedFields }) => ({
       id: product.id,
       name: product.name,
