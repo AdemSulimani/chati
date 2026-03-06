@@ -60,6 +60,18 @@ function buildHistoryForAi(conversation, maxMessages = 5, maxChars = 2000) {
   return result;
 }
 
+function getLastAssistantMessage(conversation) {
+  if (!conversation || !Array.isArray(conversation.messages)) return null;
+
+  for (let i = conversation.messages.length - 1; i >= 0; i--) {
+    const m = conversation.messages[i];
+    if (!m || m.role !== 'assistant' || !m.content) continue;
+    return String(m.content);
+  }
+
+  return null;
+}
+
 /**
  * Kontrollon nëse mesazhi është pa kuptim ose dukshëm jashtë temës (vetëm emoji, numra, shumë e shkurtër, pa shkronja).
  * Në këto raste nuk thirret AI; kthehet mesazhi i shkurtër OFF_TOPIC_MESSAGE.
@@ -96,6 +108,14 @@ function detectIntent(userMessage) {
     'çmimi',
     'cmimi',
     'sa kushton',
+    'sa është',
+    'sa eshte',
+    'sa osht',
+    'sa jane',
+    'sa janë',
+    'sa pare',
+    'sa pare o',
+    'sa kushton kjo',
     'kushton',
     'kosto',
     // Stok / disponueshmëri
@@ -170,6 +190,27 @@ function detectIntent(userMessage) {
   };
 }
 
+function isShortPriceFollowUp(userMessage, lastAssistantMessage) {
+  if (!userMessage || !lastAssistantMessage) return false;
+
+  const msg = String(userMessage).toLowerCase().trim();
+  const last = String(lastAssistantMessage).toLowerCase();
+
+  const words = msg.split(' ').filter(Boolean);
+  const wordCount = words.length;
+
+  const containsSa = /\bsa\b/.test(msg);
+  const isVeryShort = msg.length <= 20 || wordCount <= 3;
+
+  const assistantMentionsPriceOrCurrency =
+    last.includes('€') ||
+    last.includes('çmim') ||
+    last.includes('cmim') ||
+    /\d+(\.\d+)?\s*€/.test(last);
+
+  return containsSa && isVeryShort && assistantMentionsPriceOrCurrency;
+}
+
 /**
  * Hapi 4 – përdor retrievalService për të marrë një nën‑set të vogël
  * dokumentesh relevante (produkte + FAQ) dhe ndërton context për AI.
@@ -205,9 +246,6 @@ export async function postMessage(req, res, next) {
     }
 
     const userMessage = String(text).trim();
-    const intent = detectIntent(userMessage);
-    // Logim bazë për çdo mesazh të ardhur në chat
-    console.log('[Chat] New message', { userMessage, intent });
     let botReply;
     let conversation = null;
 
@@ -223,6 +261,28 @@ export async function postMessage(req, res, next) {
       conversation = new Conversation();
       await conversation.save();
     }
+
+    const lastAssistantMessage = getLastAssistantMessage(conversation);
+    const baseIntent = detectIntent(userMessage);
+    const shortFollowUp = isShortPriceFollowUp(userMessage, lastAssistantMessage);
+
+    const intent = {
+      ...baseIntent,
+      isRelevant: baseIntent.isRelevant || shortFollowUp,
+      matchedKeywords: shortFollowUp
+        ? [...(baseIntent.matchedKeywords || []), 'followup_price']
+        : baseIntent.matchedKeywords,
+    };
+
+    // Logim bazë për çdo mesazh të ardhur në chat
+    console.log('[Chat] New message', {
+      userMessage,
+      intent,
+      shortFollowUp,
+      lastAssistantMessageSnippet: lastAssistantMessage
+        ? String(lastAssistantMessage).slice(0, 200)
+        : null,
+    });
 
     // ——— Hapi 2: Intent / Përputhje me FAQ (keyword, "përputhje e fortë") ———
     const faq = await findFaqByMessage(userMessage);
@@ -249,7 +309,7 @@ export async function postMessage(req, res, next) {
       });
     }
     // ——— Hapi 3: Jashtë temës / pa kuptim → mesazh i shkurtër, pa thirrje AI ———
-    else if (isMeaninglessOrOffTopic(userMessage) || !intent.isRelevant) {
+    else if (!shortFollowUp && (isMeaninglessOrOffTopic(userMessage) || !intent.isRelevant)) {
       botReply = OFF_TOPIC_MESSAGE;
       console.log('[Chat] Off-topic or meaningless message filtered', {
         userMessage,
