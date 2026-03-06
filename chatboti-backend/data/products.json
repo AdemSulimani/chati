@@ -86,5 +86,104 @@
     "unit": "kapsula",
     "characteristics": "Omega-3 1000mg për kapsulë (EPA + DHA), 90 kapsula. Vaj peshku të pastër. Për zemër, tru dhe inflamacion.",
     "details": "1–2 kapsula në ditë me një vakt. Përdorim rreth 3 muaj. Ruajtje larg dritës dhe në temperaturë dhomë."
+  },
+  {
+    "id": "prod-9",
+    "name": "Whey Isolate Vanilla 900g",
+    "description": "Proteinë whey isolate me tretshmëri të lartë, e ulët në karbohidrate dhe yndyrë. Aromë vanilje e butë.",
+    "price": 32.99,
+    "stock": 35,
+    "category": "Proteina",
+    "unit": "g",
+    "characteristics": "Whey protein isolate, 27g proteinë për shërbesë, shumë pak sheqer dhe yndyrë. Ideale për definicion dhe humbje peshe.",
+    "details": "Përdorim: 1 shërbesë (30g) me ujë apo qumësht pas stërvitjes ose midis vakteve. E përshtatshme për personat që duan të ulin karbohidratet."
+  },
+  {
+    "id": "prod-10",
+    "name": "Mass Gainer Chocolate 3kg",
+    "description": "Gainer me kalori të larta për shtim në peshë dhe masë muskulore. Aromë çokollatë.",
+    "price": 49.99,
+    "stock": 20,
+    "category": "Gainer",
+    "unit": "kg",
+    "characteristics": "Rreth 500–700 kalori për shërbesë, përzierje karbohidratesh dhe proteinash. I përshtatshëm për hardgainers.",
+    "details": "Përdorim: 1 shërbesë (100–150g) në ditë, mundësisht mes dy vakteve kryesore. Nuk rekomandohet për persona me diabet pa konsultë mjekësore."
+  },
+  {
+    "id": "prod-11",
+    "name": "Multivitaminë Ditore 90 tableta",
+    "description": "Multivitaminë e plotë për përdorim ditor, me vitaminat kryesore dhe mineralet bazë.",
+    "price": 15.99,
+    "stock": 70,
+    "category": "Vitamina",
+    "unit": "tableta",
+    "characteristics": "Vitamina A, B-kompleks, C, D, E, zink, magnez, hekur në një tabletë. 90 tableta për 3 muaj.",
+    "details": "1 tabletë në ditë me mëngjes. E përshtatshme për meshkuj dhe femra. Mos e kombinoni me multivitamina të tjera pa këshillë."
+  },
+  {
+    "id": "prod-12",
+    "name": "Joint Support Glucosamine + MSM 120 kapsula",
+    "description": "Suplement për kyçe me glukozaminë, kondroitinë dhe MSM për mbështetje të lëvizshmërisë.",
+    "price": 24.49,
+    "stock": 50,
+    "category": "Suplement",
+    "unit": "kapsula",
+    "characteristics": "Glukozaminë, kondroitinë, MSM dhe vitamina C. 120 kapsula, përdorim rreth 1–2 muaj.",
+    "details": "Dozimi tipik: 2–4 kapsula në ditë të ndara me vakt. Rekomandohet për persona me dhimbje kyçesh, sportistë ose persona mbi 35 vjeç."
+  },
+  {
+    "id": "prod-13",
+    "name": "Whey Protein Strawberry 1kg",
+    "description": "Proteinë whey me aromë luleshtrydhe, 23–24g proteinë për shërbesë. Shije e lehtë, ideale për smoothie.",
+    "price": 25.49,
+    "stock": 40,
+    "category": "Proteina",
+    "unit": "kg",
+    "characteristics": "Proteinë për rikuperim muskujsh, pa shumë sheqer. Përzierje e mirë me ujë ose qumësht.",
+    "details": "1 shërbesë pas stërvitjes ose si zëvendësim i një vakti të vogël. Kombinohet mirë me fruta në blender."
+  },
+  {
+    "id": "prod-14",
+    "name": "Casein Protein Night 900g",
+    "description": "Proteinë kazeinë me tretje të ngadalshme, ideale për para gjumit për të parandaluar katabolizmin.",
+    "price": 29.99,
+    "stock": 28,
+    "category": "Proteina",
+    "unit": "g",
+    "characteristics": "Kazeinë micellare, liron aminoacide gradualisht deri në 6–7 orë. Aromë çokollatë.",
+    "details": "Përdorim: 1 shërbesë (30g) 30 minuta para gjumit. I përshtatshëm për ata që duan të ruajnë masën muskulore gjatë natës."
+  },
+  {
+    "id": "prod-15",
+    "name": "Electrolyte Powder Lemon 400g",
+    "description": "Pluhur elektrolitesh me aromë limoni për hidratuese gjatë stërvitjeve të gjata.",
+    "price": 17.99,
+    "stock": 55,
+    "category": "Hidratim",
+    "unit": "g",
+    "characteristics": "Natrum, kalium, magnez, klorur. Pa sheqer të shtuar. I përshtatshëm për kardio, vrapim dhe sporte ekipore.",
+    "details": "Përziej 10–15g me 500–700 ml ujë dhe pije gjatë stërvitjes. Mund të përdoret edhe gjatë ditëve shumë të nxehta për rehidrim."
+  },
+  {
+    "id": "prod-16",
+    "name": "Shaker 700ml me sitë",
+    "description": "Shaker plastik 700ml me sitë për përzierje të mirë të proteinave dhe suplementeve pluhur.",
+    "price": 5.99,
+    "stock": 100,
+    "category": "Aksesorë",
+    "unit": "copë",
+    "characteristics": "Kapak hermetik, sitë për të shmangur topthat e pluhurit, shënues ml në anë.",
+    "details": "I përshtatshëm për larje me dorë ose në lavastovilje (rafti i sipërm). Mos e përdor për pije shumë të nxehta."
+  },
+  {
+    "id": "prod-17",
+    "name": "L-Carnitine Liquid 500ml",
+    "description": "Lëng L-Carnitine për mbështetje të metabolizmit të yndyrës dhe energjisë gjatë kardios.",
+    "price": 19.99,
+    "stock": 33,
+    "category": "Suplement",
+    "unit": "ml",
+    "characteristics": "1000mg L-Carnitine për shërbesë, aromë limoni ose portokalli. Pa sheqer.",
+    "details": "Përdor 1 shërbesë (10–15ml) 20–30 minuta para kardios ose stërvitjes. Mund të pihet direkt ose i përzier me ujë."
   }
 ]
