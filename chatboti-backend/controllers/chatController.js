@@ -1,11 +1,11 @@
 /**
  * Kontrolleri i chat-it — merr mesazhin e përdoruesit dhe kthen përgjigjen e botit.
  *
- * RADHA E EKZEKUTIMIT:
+ * RADHA E RE E EKZEKUTIMIT (me RAG):
  * Hapi 1: Kontrollo nëse mesazhi është bosh ose i padëgjuar (validacion).
- * Hapi 2: Kontrollo përputhje me FAQ (keyword). Nëse ka përputhje → përgjigje nga DB (+ listë produktesh/stoku sipas nevojës).
- * Hapi 3: Nëse nuk ka përputhje FAQ, vendos nëse mesazhi duhet konsideruar "jashtë temës / pa kuptim". Nëse po → kthej mesazhin e shkurtër; mos thirr AI.
- * Hapi 4: Nëse mesazhi është "në temë", merr nga DB produktet (dhe FAQ/informacion tjetër) me të gjitha fushat (përshkrim, detaje, karakteristika, çmim, stok, etj.) dhe dërgoji te AI si kontekst.
+ * Hapi 2: Intent / FAQ detection — kontrollo përputhje të fortë me FAQ (keyword). Nëse ka përputhje → përgjigje direkt nga DB (+ listë produktesh/stoku sipas nevojës), pa thirrur AI.
+ * Hapi 3: Nëse nuk ka përputhje FAQ, kontrollo nëse mesazhi është "jashtë temës / pa kuptim". Nëse po → kthej mesazhin e shkurtër; mos thirr AI.
+ * Hapi 4: Nëse mesazhi është "në temë" dhe pa përputhje të fortë FAQ, bëj retrieval nga DB (produkte + FAQ), zgjidh 1–3 rezultate më relevante për këtë pyetje, ndërto context dhe thirr AI vetëm me ato rezultate (jo me krejt DB).
  * Hapi 5: Kthej përgjigjen te klienti.
  */
 
@@ -13,8 +13,8 @@ import {
   findFaqByMessage,
   getProducts,
   getProductsInStock,
-  getFaq,
 } from '../services/dataService.js';
+import { retrieveRelevantContext } from '../services/retrievalService.js';
 import { getAiReply, isAiConfigured } from '../services/aiService.js';
 
 /** Mesazhi i vetëm që kthehet kur përdoruesi dërgon diçka pa kuptim ose jashtë temës. */
@@ -35,6 +35,125 @@ function isMeaninglessOrOffTopic(text) {
   return false;
 }
 
+/**
+ * Intent detection i thjeshtë: vendos nëse mesazhi ka gjasa të jetë
+ * për produkte/faq/dyqan (pra vlen të provojmë retrieval) apo është
+ * jashtë temës së dyqanit.
+ *
+ * Përdor rregulla të thjeshta mbi tekstin:
+ * - fjalë kyçe rreth çmimit, stokut, porosisë, dërgesës, kthimeve, ofertave
+ * - fjalë kyçe për suplemente/fitnes (proteinë, kreatinë, whey, etj.)
+ */
+function detectIntent(userMessage) {
+  const s = String(userMessage || '').toLowerCase();
+  const normalized = s
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const domainKeywords = [
+    // Çmim / pagesë
+    'çmim',
+    'cmim',
+    'çmimi',
+    'cmimi',
+    'sa kushton',
+    'kushton',
+    'kosto',
+    // Stok / disponueshmëri
+    'stok',
+    'disponib',
+    'ka ne stok',
+    'ka në stok',
+    // Porosi / blerje
+    'porosi',
+    'porosit',
+    'blej',
+    'blerje',
+    'checkout',
+    'pagese',
+    'pagesë',
+    // Dërgesë / transport
+    'dërges',
+    'derges',
+    'transport',
+    'postë',
+    'poste',
+    'delivery',
+    // Kthime / garanci
+    'kthim',
+    'kthime',
+    'refund',
+    'rimbursim',
+    'garanci',
+    // Oferta / ulje
+    'ofert',
+    'zbritje',
+    'ulje çmimi',
+    'akcione',
+    // Produkte / dyqan
+    'produkt',
+    'produktet',
+    'artikull',
+    'artikuj',
+    'dyqan',
+    'shop',
+    'proteinplus',
+    // Suplemente / fitnes
+    'protein',
+    'proteina',
+    'whey',
+    'kreatin',
+    'creatina',
+    'bcaa',
+    'pre workout',
+    'pre-workout',
+    'amin',
+    'amino',
+    'gainer',
+    'mass',
+    'shaker',
+  ];
+
+  const matchedKeywords = domainKeywords.filter((kw) => normalized.includes(kw));
+  const hasDomainKeyword = matchedKeywords.length > 0;
+
+  // Heuristikë e thjeshtë shtesë: pyetje relativisht e gjatë me pikëpyetje,
+  // edhe pa keyword specifik, mund të konsiderohet relevante.
+  const wordCount = normalized ? normalized.split(' ').filter(Boolean).length : 0;
+  const hasQuestionMark = normalized.includes('?');
+  const looksLikeQuestion = hasQuestionMark && wordCount >= 4;
+
+  const isRelevant = hasDomainKeyword || looksLikeQuestion;
+
+  return {
+    isRelevant,
+    matchedKeywords,
+  };
+}
+
+/**
+ * Hapi 4 – përdor retrievalService për të marrë një nën‑set të vogël
+ * dokumentesh relevante (produkte + FAQ) dhe ndërton context për AI.
+ */
+async function buildRagContext(userMessage) {
+  const { products = [], faq = [] } = await retrieveRelevantContext(userMessage);
+
+  const topProductDocs = products.map((p) => p.product);
+  const topFaqDocs = faq.map((f) => ({
+    type: f.faq.type,
+    answer: f.faq.answer,
+  }));
+
+  if (!topProductDocs.length && !topFaqDocs.length) {
+    return null;
+  }
+
+  return {
+    products: topProductDocs,
+    faq: topFaqDocs,
+  };
+}
+
 export async function postMessage(req, res, next) {
   try {
     const { text } = req.body ?? {};
@@ -47,9 +166,12 @@ export async function postMessage(req, res, next) {
     }
 
     const userMessage = String(text).trim();
+    const intent = detectIntent(userMessage);
+    // Logim bazë për çdo mesazh të ardhur në chat
+    console.log('[Chat] New message', { userMessage, intent });
     let botReply;
 
-    // ——— Hapi 2: Përputhje me FAQ (keyword) ———
+    // ——— Hapi 2: Intent / Përputhje me FAQ (keyword, "përputhje e fortë") ———
     const faq = await findFaqByMessage(userMessage);
     if (faq) {
       botReply = faq.answer;
@@ -66,22 +188,45 @@ export async function postMessage(req, res, next) {
         const names = inStock.slice(0, 8).map((p) => p.name).join(', ');
         if (names) botReply += '\n\nAktualisht në stok (p.sh.): ' + names + (inStock.length > 8 ? '...' : '.');
       }
+      // Logim: përgjigje direkte nga FAQ, pa AI
+      console.log('[Chat] Responding from FAQ only', {
+        userMessage,
+        faqId: faq.id,
+        faqType: faq.type,
+      });
     }
     // ——— Hapi 3: Jashtë temës / pa kuptim → mesazh i shkurtër, pa thirrje AI ———
-    else if (isMeaninglessOrOffTopic(userMessage)) {
+    else if (isMeaninglessOrOffTopic(userMessage) || !intent.isRelevant) {
       botReply = OFF_TOPIC_MESSAGE;
+      console.log('[Chat] Off-topic or meaningless message filtered', {
+        userMessage,
+        intent,
+      });
     }
-    // ——— Hapi 4: Mesazhi "në temë" → merr nga DB produktet + FAQ me të gjitha fushat, dërgo te AI si kontekst ———
+    // ——— Hapi 4: Mesazhi "në temë", pa përputhje të fortë FAQ → RAG retrieval + AI ———
     else {
       if (isAiConfigured()) {
         try {
-          // Produktet me të gjitha fushat (përshkrim, detaje, karakteristika, çmim, stok, kategori, njësi, etj.) + FAQ
-          const [products, faqList] = await Promise.all([getProducts(), getFaq()]);
-          const context = {
-            products,
-            faq: faqList.map((f) => ({ type: f.type, answer: f.answer })),
-          };
-          botReply = await getAiReply(userMessage, undefined, context);
+          // Retrieval: merr një nën‑set të vogël (1–3) dokumentesh nga DB
+          // (produkte + FAQ) dhe përdor vetëm ato si kontekst për AI
+          // në vend se t’ia dërgojmë krejt DB‑në.
+          const context = await buildRagContext(userMessage);
+
+          if (!context) {
+            // Nëse nuk gjendet asgjë relevante në DB, lejojmë AI të përgjigjet
+            // vetëm me system prompt të përgjithshëm (pa kontekst nga DB).
+            console.log('[Chat] Using AI without DB context (no retrieval hits)', {
+              userMessage,
+            });
+            botReply = await getAiReply(userMessage);
+          } else {
+            console.log('[Chat] Using AI with RAG context', {
+              userMessage,
+              contextProductCount: context.products?.length || 0,
+              contextFaqCount: context.faq?.length || 0,
+            });
+            botReply = await getAiReply(userMessage, undefined, context);
+          }
         } catch (aiErr) {
           console.error('AI API gabim:', aiErr.message);
           botReply =

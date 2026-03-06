@@ -12,6 +12,10 @@ function normalizeText(text) {
     .trim();
 }
 
+function escapeRegex(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /** Kthen të gjitha fushat e produktit si objekt i thjeshtë (për kontekst te AI). */
 function toPlainProduct(doc) {
   if (!doc) return null;
@@ -112,4 +116,61 @@ export async function findFaqByMessage(userMessage) {
     }
   }
   return best;
+}
+
+/**
+ * Kërkim i produkteve sipas tekstit (emër + përshkrim + kategori + fushat e tjera tekstuale).
+ * Përdor regex case-insensitive në disa fusha dhe kthen një listë të vogël kandidatësh.
+ *
+ * Ky funksion NUK zëvendëson getProducts; është për retrieval më inteligjent.
+ *
+ * @param {string} query - teksti nga userMessage
+ * @param {number} [limit=30] - maksimumi i dokumenteve që kthehen
+ */
+export async function searchProductsByText(query, limit = 30) {
+  if (!query || String(query).trim() === '') return [];
+
+  const trimmed = String(query).trim();
+  const regex = new RegExp(escapeRegex(trimmed), 'i');
+
+  const docs = await Product.find({
+    $or: [
+      { name: regex },
+      { description: regex },
+      { category: regex },
+      { unit: regex },
+      { characteristics: regex },
+      { details: regex },
+    ],
+  })
+    .limit(limit)
+    .lean();
+
+  return docs.map((d) => toPlainProduct(d));
+}
+
+/**
+ * Kërkim në FAQ duke përdorur si keywords ashtu edhe tekstin e plotë të përgjigjes.
+ * Përdor regex case-insensitive për të gjetur një listë të vogël kandidatësh.
+ *
+ * @param {string} query - teksti nga userMessage
+ * @param {number} [limit=30] - maksimumi i dokumenteve që kthehen
+ */
+export async function searchFaqByTextOrKeywords(query, limit = 30) {
+  if (!query || String(query).trim() === '') return [];
+
+  const trimmed = String(query).trim();
+  const regex = new RegExp(escapeRegex(trimmed), 'i');
+
+  const docs = await Faq.find({
+    $or: [
+      { type: regex },
+      { answer: regex },
+      { keywords: { $elemMatch: { $regex: regex } } },
+    ],
+  })
+    .limit(limit)
+    .lean();
+
+  return docs.map((d) => toPlainFaq(d));
 }

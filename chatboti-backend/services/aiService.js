@@ -39,29 +39,35 @@ function formatProductForContext(p) {
 }
 
 /**
- * Ndërton system prompt me kontekstin e plotë të produkteve (dhe FAQ) nga databaza.
- * AI e merr këtë si të dhëna zyrtare; rregullat e mëposhtme përcaktojnë përdorimin e DB.
- * Hapi 5: përdor vetëm këto të dhëna për çmim/stok/përshkrim/detaje; për pyetje të tjera relevante mund të përgjigjesh nga vetja por pa shpikur; jashtë temës është filtruar në Hapi 3.
+ * Ndërton system prompt me kontekst të SHKURTËR dhe shumë relevant
+ * (produkte + FAQ) nga databaza, për RAG.
+ *
+ * AI duhet ta trajtojë këtë listë si:
+ * - një nën‑set të vogël të katalogut (jo të gjitha produktet),
+ * - burimin e vetëm për fakte rreth ÇMIMIT/STOKUT/PËRSHKRIMIT/DETAJEVE
+ *   për produktet që shfaqen këtu.
+ *
+ * Për pyetje të tjera relevante për produktet/dyqanin, AI mund të përdorë
+ * njohuritë e veta, por pa shpikur të dhëna që nuk janë në këtë kontekst.
+ * Mesazhet krejt jashtë temës janë filtruar më herët në Hapin 3.
  */
 function buildSystemPromptWithContext(products, faqList) {
   const lines = [
     'Ti je asistenti virtual i dyqanit online ProteinPlus. Përgjigju shkurt dhe miqësor në shqip.',
     '',
-    'HAPI 5 (rregulla kryesore): Përdor VETËM të dhënat e listës më poshtë për çmim, stok, përshkrim dhe detaje. Për pyetje të tjera relevante për produktet mund të përgjigjesh nga vetja, por pa shpikur të dhëna. Mesazhet jashtë temës janë të filtruara para se të arrijnë këtu (Hapi 3).',
+    'KONTEKST I SHKURTËR (RAG): më poshtë ke vetëm disa produkte dhe disa FAQ shumë relevante për pyetjen, JO gjithë katalogun e dyqanit.',
     '',
-    'RREGULLA TË DETYRUESHME PËR PËRDORIMIN E TË DHËNAVE:',
+    'RREGULLA PËR PËRDORIMIN E TË DHËNAVE:',
     '',
-    '1. Për ÇMIM, STOK, PËRSHKRIM, DETAJE dhe KARAKTERISTIKA të produkteve: përdor VETËM të dhënat nga lista e produkteve më poshtë. Mos shpik asnjë numër, çmim, stok apo fakt — nëse diçka nuk është në listë, mos e thuaj.',
+    '1. Për ÇMIM, STOK, PËRSHKRIM, DETAJE dhe KARAKTERISTIKA të produkteve: përdor VETËM të dhënat nga lista e produkteve më poshtë. Mos shpik asnjë numër, çmim, stok apo fakt.',
     '',
-    '2. Kuptimi i pyetjes: edhe kur përdoruesi nuk e shkruan fjalën saktë (p.sh. "sa kushton", "çmimi", "sa është", "a e keni", "a ka", "sa kosto", "çfarë kushton"), kupto që bëhet fjalë për çmim, stok ose informacion produkti dhe përdor VETËM të dhënat nga lista. E njëjta vlen për çdo lloj informacioni që ke në listë (jo vetëm çmim): stok, përshkrim, detaje, karakteristika.',
+    '2. Nëse pyetja është për një produkt që NUK shfaqet në këtë listë të shkurtër, thuaj që nuk e ke në këtë rezultat/kontekst dhe ofro produkte alternative nga lista, ose sqarim të përgjithshëm.',
     '',
-    '3. Produkt që nuk është në listë: nëse pyetja është për një produkt që nuk shfaqet në listën e mëposhtme, thuaj që nuk e ke atë produkt në listë dhe ofro ndihmë — p.sh. të listosh produktet e disponueshme ose kategoritë.',
+    '3. Pyetje pa informacion të drejtpërdrejtë në lista: mund të japësh këshilla të përgjithshme (p.sh. rreth suplementeve, stërvitjes, ushqimit), por mos shpik çmime, stok ose karakteristika konkrete që nuk janë në të dhëna.',
     '',
-    '4. Pyetje pa informacion në listë/FAQ: kur pyetja nuk ka informacion përkatës në listën e produkteve ose në FAQ, mund të përdorësh aftësitë e tua për të përgjigjur, por VETËM nëse përgjigjja është e saktë dhe relevante për produktet/dyqanin (p.sh. këshilla të përgjithshme për suplemente, stërvitje, ushqim). Mos shpik kurrë të dhëna të reja për çmime, stok ose produkte — ato duhen vetëm nga lista.',
+    '4. Nëse nuk je i sigurt ose përgjigjja nuk është relevante për produktet/dyqanin: thuaj që nuk ke informacion të mjaftueshëm dhe sugjero pyetje të tjera që lidhen me produktet, çmimet, dërgesën ose kthimet.',
     '',
-    '5. Nëse nuk je i sigurt ose përgjigjja nuk është relevante: thuaj që nuk ke informacion për këtë dhe ofro çfarë mund të ndihmojë (p.sh. informacion për produktet, çmime, dërgesë, kthime).',
-    '',
-    '--- PRODUKTET (të dhëna zyrtare nga databaza: emër, përshkrim, çmim, stok, kategori, njësi, karakteristika, detaje) ---',
+    '--- PRODUKTET (rezultate të përzgjedhura nga databaza: emër, përshkrim, çmim, stok, kategori, njësi, karakteristika, detaje) ---',
   ];
   if (products && products.length) {
     products.forEach((p, i) => {
@@ -88,7 +94,7 @@ function buildSystemPromptWithContext(products, faqList) {
  *
  * @param {string} userMessage - teksti i përdoruesit
  * @param {string} [systemPrompt] - përdoret vetëm nëse nuk jepet context
- * @param {{ products?: Array, faq?: Array<{type, answer}> }} [context] - të dhëna nga DB për kontekst të plotë
+ * @param {{ products?: Array, faq?: Array<{type, answer}> }} [context] - të dhëna të SHKURTRA nga DB (subset RAG) për kontekst
  * @returns {Promise<string>}
  */
 export async function getAiReply(userMessage, systemPrompt = DEFAULT_SYSTEM_PROMPT, context = null) {
